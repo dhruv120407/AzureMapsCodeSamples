@@ -1,115 +1,107 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Animate a snakeline - Azure Maps Web SDK Samples</title>
-
+    <title>51 Shaktipeethas - Azure Maps Animation</title>
     <meta charset="utf-8" />
-	<link rel="shortcut icon" href="/favicon.ico"/>
-    
+    <link rel="shortcut icon" href="/favicon.ico"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="This sample shows how to animate a LineString such that its path is drawn out smoothly over time on top of the map using what is called a snakeline animation." />
-    <meta name="keywords" content="Microsoft maps, map, gis, API, SDK, animation, animate, animations, line, linestring" />
-    <meta name="author" content="Microsoft Azure Maps" /><meta name="version" content="1.0" />
-    <meta name="screenshot" content="screenshot.gif" />
 
-    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+    <!-- Azure Maps SDK -->
     <link href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" rel="stylesheet" />
     <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
 
-    <!-- Add reference to the animation module. -->
-    <script src="/lib/azure-maps/azure-maps-animations.min.js"></script>
+    <!-- Azure Maps Animation module -->
+    <script src="https://microsoft.github.io/AzureMapsCodeSamples/Common/scripts/azure-maps-animations.min.js"></script>
 
     <script>
-        var map, line, animation;
+        var map, line, animation, datasource;
 
-        //Create an array of points to define a path to animate along.
-        var path = [
-            [-122.33825, 47.53945],
-            [-122.26135, 47.36115],
-            [-122.37121, 47.19717],
-            [-122.71179, 47.12247],
-            [-122.82165, 47.06263],
-            [-122.93151, 46.77373],
-            [-122.61840, 46.50217],
-            [-122.23388, 46.45678],
-            [-121.83837, 46.45678],
-            [-121.58020, 46.60039],
-            [-121.49780, 46.75491],
-            [-121.44836, 47.00273],
-            [-121.39892, 47.20091],
-            [-121.42089, 47.42065],
-            [-121.32202, 47.56911],
-            [-121.10229, 47.57652],
-            [-120.86059, 47.52461],
-            [-120.67382, 47.36115],
-            [-120.45410, 47.07760]
+        // Coordinates of 51 Shaktipeethas (sample lat/longs, approx for demo)
+        var shaktipeethas = [
+            { name: "Kamakhya Devi, Assam", coords: [91.7372, 26.1648] },
+            { name: "Jwalamukhi, Himachal Pradesh", coords: [76.3225, 31.8744] },
+            { name: "Naina Devi, Himachal Pradesh", coords: [76.5420, 31.2453] },
+            { name: "Vishalakshi Gauri, Varanasi", coords: [83.0066, 25.3176] },
+            { name: "Kalighat Kali, Kolkata", coords: [88.3426, 22.5186] },
+            { name: "Kankalitala, Birbhum", coords: [87.6942, 23.9179] },
+            { name: "Tara Tarini, Odisha", coords: [84.7880, 19.3880] },
+            { name: "Hinglaj Mata, Pakistan", coords: [65.5140, 25.5120] },
+            { name: "Vaishno Devi, J&K", coords: [74.9490, 33.0300] },
+            { name: "Shankari Devi, Lanka", coords: [80.6350, 7.2906] },
+            // 🔽 Add remaining Shaktipeetha coords similarly (total 51 needed)
+            // For demo purpose only 10 added here
         ];
 
+        // Create a path by extracting coordinates from Shaktipeethas
+        var path = shaktipeethas.map(s => s.coords);
+
         function getMap() {
-            //Initialize a map instance.
             map = new atlas.Map('myMap', {
-                center: [-121.69281, 47.019588],
-                zoom: 7,
+                center: [82.9739, 23.5937], // Center of India
+                zoom: 4.5,
                 view: 'Auto',
-
-                //Add authentication details for connecting to Azure Maps.
                 authOptions: {
-                    // Use SAS token for authentication 
-                    authType: 'sas',
-                    getToken: function (resolve, reject, map) {
-                        // URL to your authentication service that retrieves a SAS Token
-                        var tokenServiceUrl = 'https://samples.azuremaps.com/api/GetAzureMapsSasToken';
-
-                        fetch(tokenServiceUrl).then(r => r.text()).then(token => resolve(token));
-                    }
-
-                    //Alternatively, use an Azure Maps key. Get an Azure Maps key at https://azure.com/maps. NOTE: The primary key should be used as the key.
-                    //authType: 'subscriptionKey',
-                    //subscriptionKey: '[YOUR_AZURE_MAPS_KEY]'
+                    authType: 'subscriptionKey',
+                    subscriptionKey: '[YOUR_AZURE_MAPS_KEY]'
                 }
             });
 
-            //Wait until the map resources are ready.
             map.events.add('ready', function () {
-                line = new atlas.Shape(new atlas.data.LineString(path));
-
-                //Create a data source and add it to the map.
                 datasource = new atlas.source.DataSource();
                 map.sources.add(datasource);
 
-                //Add the data to the data source.
+                // Create line shape
+                line = new atlas.Shape(new atlas.data.LineString(path));
                 datasource.add(line);
 
-                //Add a layer for rendering line data. 
+                // Line layer
                 map.layers.add(new atlas.layer.LineLayer(datasource, null, {
                     strokeColor: 'red',
-                    strokeWidth: 5,
+                    strokeWidth: 3
+                }));
+
+                // Add Shaktipeetha pins
+                shaktipeethas.forEach(function (s) {
+                    datasource.add(new atlas.data.Feature(new atlas.data.Point(s.coords), {
+                        title: s.name
+                    }));
+                });
+
+                // Add pin layer with labels
+                map.layers.add(new atlas.layer.SymbolLayer(datasource, null, {
+                    iconOptions: {
+                        image: 'pin-round-red',
+                        allowOverlap: true
+                    },
+                    textOptions: {
+                        textField: ['get', 'title'],
+                        offset: [0, 1.2],
+                        color: '#000',
+                        size: 12
+                    }
                 }));
             });
 
+            // Animate on click
             map.events.add('click', function () {
-                
-                if (animation) {	
-					//Stop the animation in case it is already running, then play it again.				
+                if (animation) {
                     animation.stop();
-					animation.play();
+                    animation.play();
                 } else {
-					//Create the animation.
-					animation = atlas.animations.snakeline(line, { duration: 2000, easing: 'easeInCubic', autoPlay: true });
-				}
+                    animation = atlas.animations.snakeline(line, {
+                        duration: 5000,
+                        easing: 'linear',
+                        autoPlay: true
+                    });
+                }
             });
         }
     </script>
 </head>
 <body onload="getMap()">
-    <div id="myMap" style="position:relative;width:100%;min-width:290px;height:600px;"></div>
-
-    <div style="position:absolute;top:0px;left:calc(50% - 100px);background-color:white;padding:5px;">Click the map to animate line.</div>
-
-    <fieldset style="width:calc(100% - 30px);min-width:290px;margin-top:10px;">
-        <legend>Animate a snakeline</legend>
-        This sample shows how to animate a LineString such that its path is drawn out smoothly over time on top of the map using what is called a snakeline animation.
-        This sample uses the open source <a href="https://github.com/Azure-Samples/azure-maps-animations" target="_blank">Azure Maps Animation module</a>
-    </fieldset>
+    <div id="myMap" style="position:relative;width:100%;height:600px;"></div>
+    <div style="position:absolute;top:0;left:calc(50% - 120px);background:white;padding:6px;">
+        Click map to animate 51 Shaktipeethas line.
+    </div>
 </body>
 </html>
